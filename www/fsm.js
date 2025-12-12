@@ -806,6 +806,7 @@ var textEditTimer = null;
 var linkCreationStateCapture = false;
 var linkStateCaptured = false;
 var moveStateCaptured = false;
+var lastTextEdit = null; // { type: 'node'|'link', index: number }
 
 function captureState() {
 	redoStack = [];
@@ -854,6 +855,10 @@ function captureState() {
 		if(backupLink != null) {
 			state.links.push(backupLink);
 		}
+	}
+	// include lightweight text-edit metadata if present
+	if(lastTextEdit) {
+		state._textEdit = { type: lastTextEdit.type, index: lastTextEdit.index };
 	}
 	undoStack.push(state);
 	if(undoStack.length > maxUndoSteps) {
@@ -905,6 +910,10 @@ function finalizeTextEdit() {
 		clearTimeout(textEditTimer);
 	}
 	textEditTimer = null;
+	// capture post-edit state so undo/redo have both pre/post snapshots
+	captureState();
+	// clear the marker after we've recorded both snapshots
+	lastTextEdit = null;
 }
 
 function captureStateAfterTextEdit() {
@@ -964,12 +973,28 @@ function getStateSnapshot() {
 	return state;
 }
 
+
 function undo() {
 	if(undoStack.length === 0) return;
 	var currentState = getStateSnapshot();
 	redoStack.push(currentState);
 	var previousState = undoStack.pop();
+
 	restoreState(previousState);
+
+	// if this snapshot carried a text-edit marker, select object and place caret
+	if(previousState && previousState._textEdit) {
+		var m = previousState._textEdit;
+		if(m.type === 'node' && nodes[m.index]) {
+			selectedObjects = [nodes[m.index]];
+			selectedObject = nodes[m.index];
+		} else if(m.type === 'link' && links[m.index]) {
+			selectedObjects = [links[m.index]];
+			selectedObject = links[m.index];
+		}
+		resetCaret();
+		draw();
+	}
 }
 
 function redo() {
@@ -977,7 +1002,21 @@ function redo() {
 	var currentState = getStateSnapshot();
 	undoStack.push(currentState);
 	var nextState = redoStack.pop();
+
 	restoreState(nextState);
+
+	if(nextState && nextState._textEdit) {
+		var m = nextState._textEdit;
+		if(m.type === 'node' && nodes[m.index]) {
+			selectedObjects = [nodes[m.index]];
+			selectedObject = nodes[m.index];
+		} else if(m.type === 'link' && links[m.index]) {
+			selectedObjects = [links[m.index]];
+			selectedObject = links[m.index];
+		}
+		resetCaret();
+		draw();
+	}
 }
 
 function drawUsing(c) {
@@ -1248,7 +1287,12 @@ document.onkeydown = function(e) {
 		return true;
 	} else if(key == 8) { // backspace key
 		if(selectedObject != null && 'text' in selectedObject) {
-			if(textEditTimer == null) captureState();
+			if(textEditTimer == null) {
+				// mark which object is being edited
+				if(selectedObject instanceof Node) lastTextEdit = { type: 'node', index: nodes.indexOf(selectedObject) };
+				else lastTextEdit = { type: 'link', index: links.indexOf(selectedObject) };
+				captureState();
+			}
 			selectedObject.text = selectedObject.text.substr(0, selectedObject.text.length - 1);
 			resetCaret();
 			draw();
@@ -1309,7 +1353,11 @@ document.onkeypress = function(e) {
 		// don't read keystrokes when other things have focus
 		return true;
 	} else if(key >= 0x20 && key <= 0x7E && !e.metaKey && !e.altKey && !e.ctrlKey && selectedObject != null && 'text' in selectedObject) {
-		if(textEditTimer == null) captureState();
+		if(textEditTimer == null) {
+			if(selectedObject instanceof Node) lastTextEdit = { type: 'node', index: nodes.indexOf(selectedObject) };
+			else lastTextEdit = { type: 'link', index: links.indexOf(selectedObject) };
+			captureState();
+		}
 		selectedObject.text += String.fromCharCode(key);
 		resetCaret();
 		draw();
@@ -1337,7 +1385,11 @@ document.onpaste = function(e) {
 		}
 		
 		if(pastedText) {
-			if(textEditTimer == null) captureState();
+			if(textEditTimer == null) {
+				if(selectedObject instanceof Node) lastTextEdit = { type: 'node', index: nodes.indexOf(selectedObject) };
+				else lastTextEdit = { type: 'link', index: links.indexOf(selectedObject) };
+				captureState();
+			}
 			selectedObject.text += pastedText;
 			resetCaret();
 			draw();
