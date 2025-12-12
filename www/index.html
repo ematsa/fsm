@@ -65,8 +65,8 @@ textarea {
 /*
  * base64.js - Base64 encoding and decoding functions
  *
- * See: http://developer.mozilla.org/en/docs/DOM:window.btoa
- *      http://developer.mozilla.org/en/docs/DOM:window.atob
+ * See: https://developer.mozilla.org/en-US/docs/Web/API/btoa
+ *      https://developer.mozilla.org/en-US/docs/Web/API/atob
  *
  * Copyright (c) 2007, David Lindquist <david.lindquist@gmail.com>
  * Released under the MIT license
@@ -102,7 +102,7 @@ if (typeof btoa == 'undefined') {
 		<span class="error">Your browser does not support<br>the HTML5 &lt;canvas&gt; element</span>
 	</canvas>
 	<div>
-		<p class="center">Export as: <a href="javascript:saveAsPNG()">PNG</a> | <a href="javascript:saveAsSVG()">SVG</a> | <a href="javascript:saveAsLaTeX()">LaTeX</a></p>
+		<p class="center">Export as: <a href="javascript:saveAsPNG()">PNG</a> | <a href="javascript:saveAsSVG()">SVG</a> | <a href="javascript:saveAsLaTeX()">LaTeX</a> | <a href="javascript:saveAsJSON()">JSON</a> | <a href="javascript:importJSON()">Import JSON</a> | <a href="javascript:clearAll()">Clear All</a></p>
 		<textarea id="output"></textarea>
 		<p>The big white box above is the FSM designer.&nbsp; Here's how to use it:</p>
 		<ul>
@@ -117,5 +117,5 @@ if (typeof btoa == 'undefined') {
 		</ul>
 		<p>This was made in HTML5 and JavaScript using the canvas element.</p>
 	</div>
-	<p>Created by <a href="http://madebyevan.com/">Evan Wallace</a> in 2010</p>
+	<p>Created by <a href="https://madebyevan.com/">Evan Wallace</a> in 2010</p>
 </body></html>
